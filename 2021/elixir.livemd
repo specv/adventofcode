@@ -323,10 +323,10 @@ defmodule Bingo do
   def process(self, numbers) when is_list(numbers) do
     Enum.reduce_while(numbers, self, fn n, acc ->
       acc = process(acc, n)
-      bingo_board = bingo(acc)
+      bingo_boards = bingo(acc)
 
-      if bingo_board do
-        {:halt, {acc, bingo_board, n}}
+      if bingo_boards do
+        {:halt, {acc, bingo_boards, n}}
       else
         {:cont, acc}
       end
@@ -362,6 +362,201 @@ Kino.Input.read(input)
   |> Bingo.process(numbers)
   |> then(fn {_bingo, boards, number} ->
     Bingo.Board.unmarked_numbers(Enum.at(boards, 0)) |> Enum.sum() |> Kernel.*(number)
+  end)
+end)
+```
+
+```elixir
+defmodule Parser do
+  defp parse_numbers(s) do
+    s
+    |> String.split(",")
+    |> Enum.map(&String.to_integer/1)
+  end
+
+  defp parse_boards(l) do
+    l
+    |> Enum.map(&String.split(&1, "\n", trim: true))
+    |> Enum.map(fn r ->
+      Enum.map(r, fn r ->
+        r
+        |> String.split()
+        |> Enum.map(&String.to_integer/1)
+      end)
+    end)
+  end
+
+  def parse_input(input) do
+    input
+    |> String.split("\n\n", trim: true)
+    |> then(fn r ->
+      [first_line | rest_lines] = r
+      {parse_numbers(first_line), parse_boards(rest_lines)}
+    end)
+  end
+end
+
+defmodule Bingo.BoardGrid do
+  defstruct [:value, checked: false]
+
+  def new(v, checked \\ false) do
+    %__MODULE__{value: v, checked: checked}
+  end
+end
+
+defmodule Bingo.BoardRow do
+  defstruct [:grids]
+
+  def new(l) do
+    %__MODULE__{grids: Enum.map(l, &Bingo.BoardGrid.new/1)}
+  end
+
+  def input(self, number) do
+    grids =
+      self.grids
+      |> Enum.map(fn grid ->
+        if grid.value == number do
+          %Bingo.BoardGrid{grid | checked: true}
+        else
+          grid
+        end
+      end)
+
+    %__MODULE__{self | grids: grids}
+  end
+
+  def bingo(self) do
+    self.grids
+    |> Enum.all?(fn grid -> grid.checked end)
+  end
+
+  def unmarked_numbers(self) do
+    self.grids
+    |> Enum.filter(fn x -> not x.checked end)
+    |> Enum.map(fn x -> x.value end)
+  end
+end
+
+defmodule Bingo.Board do
+  defstruct [:rows, seq: -1]
+
+  def new(l) do
+    %__MODULE__{rows: Enum.map(l, &Bingo.BoardRow.new/1)}
+  end
+
+  def input(self, number) do
+    rows = self.rows |> Enum.map(fn row -> Bingo.BoardRow.input(row, number) end)
+    %__MODULE__{self | rows: rows}
+  end
+
+  def cols(self) do
+    self.rows
+    |> Enum.map(fn row -> row.grids end)
+    |> Enum.zip()
+    |> Enum.map(fn col ->
+      col
+      |> Tuple.to_list()
+      |> Enum.map(fn grid -> Bingo.BoardGrid.new(grid.value, grid.checked) end)
+      |> then(fn grids -> %Bingo.BoardRow{grids: grids} end)
+    end)
+  end
+
+  def bingo(self) do
+    Enum.any?([
+      self.rows |> Enum.any?(fn row -> Bingo.BoardRow.bingo(row) end),
+      cols(self) |> Enum.any?(fn col -> Bingo.BoardRow.bingo(col) end)
+    ])
+  end
+
+  def unmarked_numbers(self) do
+    self.rows
+    |> Enum.flat_map(fn row -> Bingo.BoardRow.unmarked_numbers(row) end)
+  end
+
+  # defimpl Inspect, for: Bingo.Board do
+  #   import Inspect.Algebra
+
+  #   def inspect(board, opts) do
+  #     board.rows
+  #       |> Enum.map(fn row -> Enum.map(row.grids, fn grid -> grid.checked end) end)
+  #       |> inspect
+  #   end
+  # end
+end
+
+defmodule Bingo do
+  defstruct boards: [], seq: -1
+
+  def new(l) do
+    %__MODULE__{boards: Enum.map(l, &Bingo.Board.new/1)}
+  end
+
+  def bingo(self) do
+    self.boards
+    # |> Enum.filter(fn board -> board.seq < 0 && Bingo.Board.bingo(board) end)
+    |> Enum.map_reduce(self.seq, fn board, acc ->
+      if board.seq < 0 && Bingo.Board.bingo(board) do
+        {%Bingo.Board{board | seq: acc + 1}, acc + 1}
+      else
+        {board, acc}
+      end
+    end)
+    |> then(fn {boards, seq} ->
+      %Bingo{self | boards: boards, seq: seq}
+    end)
+  end
+
+  def process(self, number) when is_integer(number) do
+    boards = self.boards |> Enum.map(fn board -> Bingo.Board.input(board, number) end)
+    %__MODULE__{self | boards: boards}
+  end
+
+  def process(self, numbers) when is_list(numbers) do
+    Enum.reduce_while(numbers, self, fn n, bingo ->
+      bingo = process(bingo, n)
+      bingo = bingo(bingo)
+
+      bingo_boards =
+        bingo.boards
+        |> Enum.filter(fn board -> board.seq >= 0 end)
+        |> Enum.sort_by(fn board -> board.seq end)
+
+      if length(bingo_boards) == length(bingo.boards) do
+        {:halt, {bingo, bingo_boards, n}}
+      else
+        {:cont, bingo}
+      end
+    end)
+  end
+
+  def unmarked_numbers(self) do
+    self.boards
+    |> Enum.flat_map(fn board -> Bingo.Board.unmarked_numbers(board) end)
+  end
+
+  # def process(self, numbers) when is_list(numbers) do
+  #   for n <- numbers do
+  #     self = process(self, n)
+  #   end
+
+  #   self
+  # end
+end
+```
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+```elixir
+Kino.Input.read(input)
+|> Parser.parse_input()
+|> then(fn {numbers, boards} ->
+  Bingo.new(boards)
+  |> Bingo.process(numbers)
+  |> then(fn {_bingo, boards, number} ->
+    # {boards, number}
+    Bingo.Board.unmarked_numbers(Enum.at(boards, -1)) |> Enum.sum() |> Kernel.*(number)
   end)
 end)
 ```
