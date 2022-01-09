@@ -65,3 +65,52 @@ Kino.Input.read(input)
 ```output
 7473
 ```
+
+## Part 2
+
+```elixir
+defmodule M do
+  def parse(input) do
+    input
+    |> String.split("\n", trim: true)
+    |> Enum.map(fn row ->
+      ~r/(?<x1>\d+),(?<y1>\d+) -> (?<x2>\d+),(?<y2>\d+)/
+      |> Regex.named_captures(row)
+      |> Enum.map(fn {k, v} -> {k, String.to_integer(v)} end)
+      |> Map.new()
+    end)
+  end
+
+  def lines_to_points(lines) do
+    lines
+    |> Enum.map(&line_to_points(&1))
+    |> Enum.flat_map(& &1)
+  end
+
+  def line_to_points(line) do
+    cond do
+      line["x1"] == line["x2"] ->
+        line["y1"]..line["y2"] |> Enum.map(&{line["x1"], &1})
+
+      line["y1"] == line["y2"] ->
+        line["x1"]..line["x2"] |> Enum.map(&{&1, line["y1"]})
+
+      abs(line["x1"] - line["x2"]) == abs(line["y1"] - line["y2"]) ->
+        Enum.zip(line["x1"]..line["x2"], line["y1"]..line["y2"])
+
+      true ->
+        []
+    end
+  end
+end
+
+Kino.Input.read(input)
+|> M.parse()
+|> M.lines_to_points()
+|> Enum.frequencies()
+|> Enum.count(fn {_k, v} -> v > 1 end)
+```
+
+```output
+24164
+```
