@@ -1,0 +1,80 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Day 2: Dive!
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```output
+:ok
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Part 1
+
+```elixir
+Kino.Input.read(input)
+|> String.split("\n", trim: true)
+|> Enum.map(&String.split(&1, " "))
+|> Enum.split_with(fn [action, _] ->
+  case action do
+    "forward" -> true
+    _ -> false
+  end
+end)
+|> then(fn {l, r} ->
+  {
+    Enum.map(l, fn [_, v] -> String.to_integer(v) end),
+    Enum.map(r, fn [action, v] ->
+      case action do
+        "up" -> String.to_integer(v) * -1
+        "down" -> String.to_integer(v)
+      end
+    end)
+  }
+end)
+|> then(fn {l, r} -> Enum.sum(l) * Enum.sum(r) end)
+```
+
+```output
+1670340
+```
+
+## Part 2
+
+```elixir
+Kino.Input.read(input)
+|> String.split("\n", trim: true)
+|> Enum.map(&String.split(&1, " "))
+|> Enum.map(fn [action, v] ->
+  v = String.to_integer(v)
+
+  case action do
+    "up" -> [0, -v, 0]
+    "down" -> [0, v, 0]
+    "forward" -> [v, 0, v]
+  end
+end)
+|> Enum.reduce({0, 0, 0}, fn [h, a, d], {acc_h, acc_a, acc_d} ->
+  {
+    acc_h + h,
+    acc_a + a,
+    acc_d + d * (acc_a + a)
+  }
+end)
+|> then(fn {x, _, y} -> x * y end)
+```
+
+```output
+1954293920
+```

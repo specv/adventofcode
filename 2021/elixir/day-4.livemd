@@ -1,4 +1,6 @@
-# Advent of Code - 2021
+<!-- livebook:{"persist_outputs":true} -->
+
+# Day 4: Giant Squid
 
 ## Setup
 
@@ -8,181 +10,17 @@ Mix.install([
 ])
 ```
 
-## Day 1: Sonar Sweep
+```output
+:ok
+```
+
+## Input
 
 ```elixir
 input = Kino.Input.textarea("Input")
 ```
 
-```elixir
-Kino.Input.read(input)
-|> String.split("\n", trim: true)
-|> Enum.map(&String.to_integer(&1))
-|> Enum.chunk_every(2, 1, :discard)
-|> Enum.map(fn [x, y] -> y > x end)
-|> Enum.count(fn x -> x end)
-```
-
-```elixir
-Kino.Input.read(input)
-|> String.split("\n", trim: true)
-|> Enum.map(&String.to_integer(&1))
-|> Enum.chunk_every(3, 1, :discard)
-|> Enum.map(&Enum.sum(&1))
-|> Enum.chunk_every(2, 1, :discard)
-|> Enum.map(fn [x, y] -> y > x end)
-|> Enum.count(fn x -> x end)
-```
-
-## Day 2: Dive!
-
-```elixir
-input = Kino.Input.textarea("Input")
-```
-
-```elixir
-Kino.Input.read(input)
-|> String.split("\n", trim: true)
-|> Enum.map(&String.split(&1, " "))
-|> Enum.split_with(fn [action, _] ->
-  case action do
-    "forward" -> true
-    _ -> false
-  end
-end)
-|> then(fn {l, r} ->
-  {
-    Enum.map(l, fn [_, v] -> String.to_integer(v) end),
-    Enum.map(r, fn [action, v] ->
-      case action do
-        "up" -> String.to_integer(v) * -1
-        "down" -> String.to_integer(v)
-      end
-    end)
-  }
-end)
-|> then(fn {l, r} -> Enum.sum(l) * Enum.sum(r) end)
-```
-
-```elixir
-Kino.Input.read(input)
-|> String.split("\n", trim: true)
-|> Enum.map(&String.split(&1, " "))
-|> Enum.map(fn [action, v] ->
-  v = String.to_integer(v)
-
-  case action do
-    "up" -> [0, -v, 0]
-    "down" -> [0, v, 0]
-    "forward" -> [v, 0, v]
-  end
-end)
-|> Enum.reduce({0, 0, 0}, fn [h, a, d], {acc_h, acc_a, acc_d} ->
-  {
-    acc_h + h,
-    acc_a + a,
-    acc_d + d * (acc_a + a)
-  }
-end)
-|> then(fn {x, _, y} -> x * y end)
-```
-
-## Day 3: Binary Diagnostic
-
-```elixir
-input = Kino.Input.textarea("Input")
-```
-
-```elixir
-defmodule M do
-  def calc(freq, func) do
-    freq
-    |> Enum.map(&func.(&1, fn r -> elem(r, 1) end))
-    |> Enum.map(&elem(&1, 0))
-    |> List.to_string()
-    |> String.to_integer(2)
-  end
-end
-
-Kino.Input.read(input)
-|> String.split()
-|> Enum.map(&String.to_charlist/1)
-|> Enum.zip()
-|> Enum.map(&Tuple.to_list/1)
-|> Enum.map(&Enum.frequencies/1)
-|> then(fn freq ->
-  M.calc(freq, &Enum.max_by/2) * M.calc(freq, &Enum.min_by/2)
-end)
-```
-
-```elixir
-defmodule M do
-  defp freq_bit(li, max_fn) do
-    li
-    |> Enum.frequencies()
-    |> max_fn.()
-    |> then(fn r -> elem(r, 0) end)
-  end
-
-  def filter(li, position, max_fn) do
-    if length(li) == 1 do
-      li
-    else
-      filter(do_filter(li, position, max_fn), position + 1, max_fn)
-    end
-  end
-
-  defp do_filter(li, position, max_fn) do
-    li
-    |> Enum.zip()
-    |> Enum.at(position)
-    |> Tuple.to_list()
-    |> freq_bit(max_fn)
-    |> then(fn bit ->
-      Enum.filter(li, fn l -> Enum.at(l, position) == bit end)
-    end)
-  end
-
-  defp max(li) do
-    Enum.max_by(
-      li,
-      fn r -> elem(r, 1) end,
-      fn x, y -> x > y end
-    )
-  end
-
-  defp min(li) do
-    Enum.min_by(
-      li,
-      fn r -> elem(r, 1) end,
-      fn x, y -> x <= y end
-    )
-  end
-
-  def oxygen(li) do
-    li
-    |> filter(0, &max/1)
-    |> Enum.at(0)
-    |> List.to_string()
-    |> String.to_integer(2)
-  end
-
-  def co2(li) do
-    li
-    |> filter(0, &min/1)
-    |> Enum.at(0)
-    |> List.to_string()
-    |> String.to_integer(2)
-  end
-end
-
-Kino.Input.read(input)
-|> String.split()
-|> Enum.map(&String.to_charlist/1)
-|> then(&(M.oxygen(&1) * M.co2(&1)))
-```
-
-## Day 4: Giant Squid
+## Part 1
 
 ```elixir
 defmodule Parser do
@@ -348,11 +186,9 @@ defmodule Bingo do
 end
 ```
 
-```elixir
-input = Kino.Input.textarea("Input")
+```output
+{:module, Bingo, <<70, 79, 82, 49, 0, 0, 16, ...>>, {:unmarked_numbers, 1}}
 ```
-
-<!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
 Kino.Input.read(input)
@@ -365,6 +201,12 @@ Kino.Input.read(input)
   end)
 end)
 ```
+
+```output
+1440
+```
+
+## Part 2
 
 ```elixir
 defmodule Parser do
@@ -544,8 +386,8 @@ defmodule Bingo do
 end
 ```
 
-```elixir
-input = Kino.Input.textarea("Input")
+```output
+{:module, Bingo, <<70, 79, 82, 49, 0, 0, 21, ...>>, {:unmarked_numbers, 1}}
 ```
 
 ```elixir
@@ -559,4 +401,8 @@ Kino.Input.read(input)
     Bingo.Board.unmarked_numbers(Enum.at(boards, -1)) |> Enum.sum() |> Kernel.*(number)
   end)
 end)
+```
+
+```output
+1284
 ```
