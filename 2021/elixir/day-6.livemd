@@ -1,0 +1,41 @@
+# Day 6: Lanternfish
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Part 1
+
+```elixir
+defmodule M do
+  @spawn_timer 8
+  @loop_timer 6
+  def spawn(initial_state, days) do
+    Enum.reduce(1..days, initial_state, fn day, state ->
+      {state, n_spawn} =
+        Enum.map_reduce(state, 0, fn timer, n_spawn ->
+          if timer - 1 < 0, do: {@loop_timer, n_spawn + 1}, else: {timer - 1, n_spawn}
+        end)
+
+      (state ++ List.duplicate(@spawn_timer, n_spawn))
+      |> tap(&IO.inspect(&1, label: "Day #{day}"))
+    end)
+  end
+end
+
+Kino.Input.read(input)
+|> String.split(",", trim: true)
+|> Enum.map(&String.to_integer/1)
+|> M.spawn(80)
+|> Enum.count()
+```
