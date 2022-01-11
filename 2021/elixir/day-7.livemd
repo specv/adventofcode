@@ -1,0 +1,33 @@
+# Day 7: The Treachery of Whales
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Part 1
+
+```elixir
+defmodule M do
+  def fuel_cost(positions, pos) do
+    positions
+    |> Enum.map(&abs(&1 - pos))
+    |> Enum.sum()
+  end
+end
+
+Kino.Input.read(input)
+|> String.split(",")
+|> Enum.map(&String.to_integer(&1))
+|> then(&Enum.map(Enum.min(&1)..Enum.max(&1), fn p -> M.fuel_cost(&1, p) end))
+|> Enum.min()
+```
