@@ -31,3 +31,24 @@ Kino.Input.read(input)
 |> then(&Enum.map(Enum.min(&1)..Enum.max(&1), fn p -> M.fuel_cost(&1, p) end))
 |> Enum.min()
 ```
+
+## Part 2
+
+```elixir
+defmodule M do
+  def fuel_cost(positions, pos) do
+    positions
+    |> Enum.map(fn p ->
+      x = abs(p - pos)
+      (x + 1) * x / 2
+    end)
+    |> Enum.sum()
+  end
+end
+
+Kino.Input.read(input)
+|> String.split(",")
+|> Enum.map(&String.to_integer(&1))
+|> then(&Enum.map(Enum.min(&1)..Enum.max(&1), fn p -> M.fuel_cost(&1, p) end))
+|> Enum.min()
+```
