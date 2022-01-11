@@ -39,3 +39,29 @@ Kino.Input.read(input)
 |> M.spawn(80)
 |> Enum.count()
 ```
+
+## Part 2
+
+```elixir
+defmodule M do
+  def spawn(state, days) when is_map(state) do
+    Enum.map(0..8, &Map.get(state, &1, 0))
+    |> M.spawn(days)
+  end
+
+  def spawn(state = [t0, t1, t2, t3, t4, t5, t6, t7, t8], days) when is_list(state) do
+    if days == 0 do
+      state
+    else
+      M.spawn([t1, t2, t3, t4, t5, t6, t7 + t0, t8, t0], days - 1)
+    end
+  end
+end
+
+Kino.Input.read(input)
+|> String.split(",", trim: true)
+|> Enum.map(&String.to_integer/1)
+|> Enum.frequencies()
+|> M.spawn(256)
+|> Enum.sum()
+```
