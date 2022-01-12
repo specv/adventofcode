@@ -1,0 +1,33 @@
+# Day 8: Seven Segment Search
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Part 1
+
+```elixir
+Kino.Input.read(input)
+|> String.split("\n", trim: true)
+|> Enum.map(fn line ->
+  line
+  |> String.split("|")
+  |> List.to_tuple()
+  |> elem(1)
+  |> String.split(" ", trim: true)
+  |> Enum.map(&String.length(&1))
+  |> Enum.filter(&Enum.member?([2, 4, 3, 7], &1))
+  |> Enum.count()
+end)
+|> Enum.sum()
+```
