@@ -31,3 +31,108 @@ Kino.Input.read(input)
 end)
 |> Enum.sum()
 ```
+
+## Part 2
+
+```elixir
+defmodule M do
+  def find(l, len) do
+    Enum.filter(l, fn s -> length(s) == len end)
+    |> Enum.at(0)
+  end
+
+  def interpret(l, s) do
+    digits = %{
+      'bc' => 1,
+      'abdeg' => 2,
+      'abcdg' => 3,
+      'bcfg' => 4,
+      'acdfg' => 5,
+      'acdefg' => 6,
+      'abc' => 7,
+      'abcdefg' => 8,
+      'abcdfg' => 9,
+      'abcdef' => 0
+    }
+
+    mapping =
+      %{a: M.a(l), b: M.b(l), c: M.c(l), d: M.d(l), e: M.e(l), f: M.f(l), g: M.g(l)}
+      |> Enum.map(fn {a, b} -> {b, Atom.to_charlist(a)} end)
+      |> Map.new()
+
+    Enum.map(s, fn c -> Map.get(mapping, [c]) end)
+    |> Enum.sort()
+    |> Enum.join()
+    |> String.to_charlist()
+    |> then(&Map.get(digits, &1))
+  end
+
+  def a(l) do
+    [find(l, 3), find(l, 2)]
+    |> Enum.map(&MapSet.new/1)
+    |> then(fn [x, y] -> MapSet.difference(x, y) end)
+    |> MapSet.to_list()
+  end
+
+  def d(l) do
+    find(l, 4)
+    |> Kernel.++(a(l))
+    |> then(fn x ->
+      Enum.filter(l, fn e ->
+        e != find(l, 7) and MapSet.subset?(MapSet.new(x), MapSet.new(e))
+      end)
+      |> Enum.at(0)
+      |> MapSet.new()
+      |> MapSet.difference(MapSet.new(x))
+      |> MapSet.to_list()
+    end)
+  end
+
+  def g(l) do
+    Enum.filter(l, fn s -> length(s) == 5 end)
+    |> Enum.map(&MapSet.new/1)
+    |> Enum.reduce(&MapSet.intersection/2)
+    |> MapSet.to_list()
+    |> Kernel.--(a(l))
+    |> Kernel.--(d(l))
+  end
+
+  def e(l) do
+    find(l, 7) -- (find(l, 4) ++ a(l) ++ d(l))
+  end
+
+  def f(l) do
+    (find(l, 4) -- find(l, 2)) -- g(l)
+  end
+
+  def c(l) do
+    Enum.filter(l, fn s -> length(s) == 6 end)
+    |> Enum.map(&MapSet.new/1)
+    |> Enum.reduce(&MapSet.intersection/2)
+    |> Enum.to_list()
+    |> Kernel.--(a(l))
+    |> Kernel.--(f(l))
+    |> Kernel.--(d(l))
+  end
+
+  def b(l) do
+    find(l, 2)
+    |> Kernel.--(c(l))
+  end
+end
+
+Kino.Input.read(input)
+|> String.split("\n", trim: true)
+|> Enum.map(fn line ->
+  line
+  |> String.split("|")
+  |> Enum.map(
+    &(String.split(&1, " ", trim: true)
+      |> Enum.map(fn r -> String.to_charlist(r) end))
+  )
+  |> then(fn [l, r] ->
+    Enum.map(r, &M.interpret(l, &1)) |> Enum.join() |> String.to_integer()
+  end)
+end)
+|> Enum.sum()
+```
