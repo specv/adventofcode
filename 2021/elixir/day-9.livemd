@@ -1,0 +1,72 @@
+# Day 9: Smoke Basin
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Part 1
+
+```elixir
+defmodule M do
+  @direction [{0, -1}, {1, 0}, {0, 1}, {-1, 0}]
+
+  def sum_low_points(matrix) do
+    find_low_points(matrix)
+    |> Enum.map(fn {x, y} -> at(matrix, x, y) end)
+    |> Enum.map(&Kernel.+(&1, 1))
+    |> Enum.sum()
+  end
+
+  def find_low_points(matrix) do
+    {width, height} = matrix_size(matrix)
+    for y <- 0..(height - 1), x <- 0..(width - 1), is_low_point?(matrix, x, y), do: {x, y}
+  end
+
+  defp at(matrix, x, y) do
+    {width, height} = matrix_size(matrix)
+
+    cond do
+      x < 0 -> 9
+      x >= width -> 9
+      y < 0 -> 9
+      y >= height -> 9
+      true -> matrix |> Enum.at(y) |> Enum.at(x)
+    end
+  end
+
+  defp is_low_point?(matrix, x, y) do
+    @direction
+    |> Enum.map(fn {offset_x, offset_y} ->
+      {nx, ny} = {x + offset_x, y + offset_y}
+      at(matrix, x, y) < at(matrix, nx, ny)
+    end)
+    |> Enum.all?()
+  end
+
+  defp matrix_size(matrix) do
+    height = length(matrix)
+    width = if height > 0, do: length(Enum.at(matrix, 0)), else: 0
+    {width, height}
+  end
+end
+
+input
+|> Kino.Input.read()
+|> String.split("\n", trim: true)
+|> Enum.map(fn row ->
+  row
+  |> String.split("", trim: true)
+  |> Enum.map(&String.to_integer/1)
+end)
+|> M.sum_low_points()
+```
