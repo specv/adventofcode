@@ -36,38 +36,39 @@ end)
 
 ```elixir
 defmodule M do
+  @digits %{
+    'bc' => 1,
+    'abdeg' => 2,
+    'abcdg' => 3,
+    'bcfg' => 4,
+    'acdfg' => 5,
+    'acdefg' => 6,
+    'abc' => 7,
+    'abcdefg' => 8,
+    'abcdfg' => 9,
+    'abcdef' => 0
+  }
+
   def find(l, len) do
     Enum.filter(l, fn s -> length(s) == len end)
     |> Enum.at(0)
   end
 
   def interpret(l, s) do
-    digits = %{
-      'bc' => 1,
-      'abdeg' => 2,
-      'abcdg' => 3,
-      'bcfg' => 4,
-      'acdfg' => 5,
-      'acdefg' => 6,
-      'abc' => 7,
-      'abcdefg' => 8,
-      'abcdfg' => 9,
-      'abcdef' => 0
-    }
-
-    mapping =
-      %{a: M.a(l), b: M.b(l), c: M.c(l), d: M.d(l), e: M.e(l), f: M.f(l), g: M.g(l)}
-      |> Enum.map(fn {a, b} -> {b, Atom.to_charlist(a)} end)
-      |> Map.new()
-
-    Enum.map(s, fn c -> Map.get(mapping, [c]) end)
+    ?a..?g
+    |> Enum.map(fn x ->
+      {apply(M, String.to_atom(<<x>>), [l]), String.to_charlist(<<x>>)}
+    end)
+    |> Map.new()
+    |> then(&Enum.map(s, fn c -> Map.get(&1, [c]) end))
     |> Enum.sort()
     |> Enum.join()
     |> String.to_charlist()
-    |> then(&Map.get(digits, &1))
+    |> then(&Map.get(@digits, &1))
   end
 
   def a(l) do
+    # 7 - 1 => A
     [find(l, 3), find(l, 2)]
     |> Enum.map(&MapSet.new/1)
     |> then(fn [x, y] -> MapSet.difference(x, y) end)
@@ -75,6 +76,7 @@ defmodule M do
   end
 
   def d(l) do
+    # A + 4 =>  9 => D
     find(l, 4)
     |> Kernel.++(a(l))
     |> then(fn x ->
@@ -89,6 +91,7 @@ defmodule M do
   end
 
   def g(l) do
+    # 5 & 2 & 3 - A - D = G
     Enum.filter(l, fn s -> length(s) == 5 end)
     |> Enum.map(&MapSet.new/1)
     |> Enum.reduce(&MapSet.intersection/2)
@@ -98,14 +101,17 @@ defmodule M do
   end
 
   def e(l) do
+    # 8 - 4 - A - D => E
     find(l, 7) -- (find(l, 4) ++ a(l) ++ d(l))
   end
 
   def f(l) do
+    # 4 - 1 - G = F
     (find(l, 4) -- find(l, 2)) -- g(l)
   end
 
   def c(l) do
+    # 0 & 6 & 9 - A - F - D = C
     Enum.filter(l, fn s -> length(s) == 6 end)
     |> Enum.map(&MapSet.new/1)
     |> Enum.reduce(&MapSet.intersection/2)
@@ -116,6 +122,7 @@ defmodule M do
   end
 
   def b(l) do
+    # 1 - C = B
     find(l, 2)
     |> Kernel.--(c(l))
   end
