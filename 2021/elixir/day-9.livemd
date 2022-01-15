@@ -156,3 +156,99 @@ matrix
 |> Enum.map(&MapSet.size/1)
 |> Enum.reduce(&Kernel.*/2)
 ```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Part 2 Optimized
+
+```elixir
+defmodule M do
+  @direction [{0, -1}, {1, 0}, {0, 1}, {-1, 0}]
+
+  def new(input) do
+    input
+    |> String.split("\n", trim: true)
+    |> Enum.map(fn row ->
+      row
+      |> String.split("", trim: true)
+      |> Enum.map(&String.to_integer/1)
+    end)
+  end
+
+  def matrix_map(matrix) do
+    matrix
+    |> then(fn m ->
+      for {line, row} <- Enum.with_index(m), {val, col} <- Enum.with_index(line) do
+        {{col, row}, val}
+      end
+    end)
+    |> Map.new()
+  end
+
+  def find_low_points(matrix) do
+    {width, height} = matrix_size(matrix)
+    for y <- 0..(height - 1), x <- 0..(width - 1), is_low_point?(matrix, x, y), do: {x, y}
+  end
+
+  defp is_low_point?(matrix, x, y) do
+    @direction
+    |> Enum.map(fn {offset_x, offset_y} ->
+      {nx, ny} = {x + offset_x, y + offset_y}
+      at(matrix, x, y) < at(matrix, nx, ny)
+    end)
+    |> Enum.all?()
+  end
+
+  def at(matrix, x, y) do
+    {width, height} = matrix_size(matrix)
+
+    cond do
+      x < 0 -> 9
+      x >= width -> 9
+      y < 0 -> 9
+      y >= height -> 9
+      true -> matrix |> Enum.at(y) |> Enum.at(x)
+    end
+  end
+
+  defp matrix_size(matrix) do
+    height = length(matrix)
+    width = if height > 0, do: length(Enum.at(matrix, 0)), else: 0
+    {width, height}
+  end
+end
+
+defmodule Recursion do
+  def find_basin(matrix_map, x, y) do
+    find_basin(matrix_map, x, y, MapSet.new())
+  end
+
+  def find_basin(matrix_map, x, y, basin) do
+    if MapSet.member?(basin, {x, y}) or Map.get(matrix_map, {x, y}, 9) >= 9 do
+      basin
+    else
+      basin = MapSet.put(basin, {x, y})
+      basin = find_basin(matrix_map, x - 1, y, basin)
+      basin = find_basin(matrix_map, x + 1, y, basin)
+      basin = find_basin(matrix_map, x, y - 1, basin)
+      basin = find_basin(matrix_map, x, y + 1, basin)
+      basin
+    end
+  end
+end
+
+matrix = input |> Kino.Input.read() |> M.new()
+matrix_map = M.matrix_map(matrix)
+
+matrix
+|> M.find_low_points()
+|> Enum.map(fn {x, y} -> Recursion.find_basin(matrix_map, x, y) end)
+|> Enum.sort_by(&MapSet.size/1, :desc)
+|> Enum.take(3)
+|> Enum.map(&MapSet.size/1)
+|> Enum.reduce(&Kernel.*/2)
+```
