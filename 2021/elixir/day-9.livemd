@@ -70,3 +70,89 @@ input
 end)
 |> M.sum_low_points()
 ```
+
+## Part 2
+
+```elixir
+defmodule M do
+  @direction [{0, -1}, {1, 0}, {0, 1}, {-1, 0}]
+
+  def new(input) do
+    input
+    |> String.split("\n", trim: true)
+    |> Enum.map(fn row ->
+      row
+      |> String.split("", trim: true)
+      |> Enum.map(&String.to_integer/1)
+    end)
+  end
+
+  def find_low_points(matrix) do
+    {width, height} = matrix_size(matrix)
+    for y <- 0..(height - 1), x <- 0..(width - 1), is_low_point?(matrix, x, y), do: {x, y}
+  end
+
+  def find_bastion(matrix, pos) do
+    find_bastion(matrix, pos, MapSet.new())
+  end
+
+  def find_bastion(matrix, pos = {x, y}, bastion) do
+    positions =
+      @direction
+      |> Enum.map(fn {offset_x, offset_y} ->
+        {nx, ny} = {x + offset_x, y + offset_y}
+        if at(matrix, nx, ny) < 9, do: {nx, ny}, else: nil
+      end)
+      |> Enum.filter(& &1)
+      |> MapSet.new()
+      |> MapSet.difference(bastion)
+
+    bastion = MapSet.put(bastion, pos) |> MapSet.union(positions)
+
+    positions
+    |> Enum.map(fn p -> find_bastion(matrix, p, bastion) end)
+    |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+    |> MapSet.union(bastion)
+  end
+
+  def at(matrix, x, y) do
+    {width, height} = matrix_size(matrix)
+
+    cond do
+      x < 0 -> 9
+      x >= width -> 9
+      y < 0 -> 9
+      y >= height -> 9
+      true -> matrix |> Enum.at(y) |> Enum.at(x)
+    end
+  end
+
+  defp is_low_point?(matrix, x, y) do
+    @direction
+    |> Enum.map(fn {offset_x, offset_y} ->
+      {nx, ny} = {x + offset_x, y + offset_y}
+      at(matrix, x, y) < at(matrix, nx, ny)
+    end)
+    |> Enum.all?()
+  end
+
+  defp matrix_size(matrix) do
+    height = length(matrix)
+    width = if height > 0, do: length(Enum.at(matrix, 0)), else: 0
+    {width, height}
+  end
+end
+
+matrix =
+  input
+  |> Kino.Input.read()
+  |> M.new()
+
+matrix
+|> M.find_low_points()
+|> Enum.map(&M.find_bastion(matrix, &1))
+|> Enum.sort_by(&MapSet.size/1, :desc)
+|> Enum.take(3)
+|> Enum.map(&MapSet.size/1)
+|> Enum.reduce(&Kernel.*/2)
+```
