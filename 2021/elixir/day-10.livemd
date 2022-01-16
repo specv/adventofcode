@@ -1,0 +1,77 @@
+# Day 10: Syntax Scoring
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Part 1
+
+```elixir
+defmodule Stack do
+  defstruct list: []
+
+  def new(list \\ []) do
+    %__MODULE__{list: list}
+  end
+
+  def pop(%__MODULE__{list: [value | rest]}) do
+    {%__MODULE__{list: rest}, value}
+  end
+
+  def push(%__MODULE__{list: list}, value) do
+    %__MODULE__{list: [value | list]}
+  end
+end
+
+defmodule M do
+  @brackets %{
+    ?( => ?),
+    ?[ => ?],
+    ?{ => ?},
+    ?< => ?>
+  }
+  def bracket_points() do
+    %{
+      ?) => 3,
+      ?] => 57,
+      ?} => 1197,
+      ?> => 25137
+    }
+  end
+
+  def feed(chars) do
+    Enum.reduce_while(chars, {Stack.new(), nil}, fn char, {stack, _} ->
+      acc = feed(stack, char)
+      if elem(acc, 1) == nil, do: {:cont, acc}, else: {:halt, acc}
+    end)
+  end
+
+  def feed(stack, char) do
+    if @brackets[char] do
+      {Stack.push(stack, char), nil}
+    else
+      {stack, value} = Stack.pop(stack)
+      {stack, if(@brackets[value] == char, do: nil, else: char)}
+    end
+  end
+end
+
+Kino.Input.read(input)
+|> String.split("\n", trim: true)
+|> Enum.map(&String.to_charlist/1)
+|> Enum.map(&M.feed/1)
+|> Enum.map(&elem(&1, 1))
+|> Enum.filter(& &1)
+|> Enum.map(fn char -> M.bracket_points()[char] end)
+|> Enum.sum()
+```
