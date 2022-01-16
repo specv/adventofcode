@@ -14,7 +14,7 @@ Mix.install([
 input = Kino.Input.textarea("Input")
 ```
 
-## Part 1
+## Stack
 
 ```elixir
 defmodule Stack do
@@ -32,15 +32,22 @@ defmodule Stack do
     %__MODULE__{list: [value | list]}
   end
 end
+```
 
-defmodule M do
-  @brackets %{
-    ?( => ?),
-    ?[ => ?],
-    ?{ => ?},
-    ?< => ?>
-  }
-  def bracket_points() do
+## Part 1
+
+```elixir
+defmodule Bracket do
+  def brackets do
+    %{
+      ?( => ?),
+      ?[ => ?],
+      ?{ => ?},
+      ?< => ?>
+    }
+  end
+
+  def points do
     %{
       ?) => 3,
       ?] => 57,
@@ -57,11 +64,11 @@ defmodule M do
   end
 
   def feed(stack, char) do
-    if @brackets[char] do
+    if brackets()[char] do
       {Stack.push(stack, char), nil}
     else
       {stack, value} = Stack.pop(stack)
-      {stack, if(@brackets[value] == char, do: nil, else: char)}
+      {stack, if(brackets()[value] == char, do: nil, else: char)}
     end
   end
 end
@@ -69,9 +76,40 @@ end
 Kino.Input.read(input)
 |> String.split("\n", trim: true)
 |> Enum.map(&String.to_charlist/1)
-|> Enum.map(&M.feed/1)
+|> Enum.map(&Bracket.feed/1)
 |> Enum.map(&elem(&1, 1))
 |> Enum.filter(& &1)
-|> Enum.map(fn char -> M.bracket_points()[char] end)
+|> Enum.map(fn char -> Bracket.points()[char] end)
 |> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+defmodule Score do
+  def score(stack) do
+    stack.list
+    |> Enum.map(fn char ->
+      case Bracket.brackets()[char] do
+        ?) -> 1
+        ?] -> 2
+        ?} -> 3
+        ?> -> 4
+      end
+    end)
+    |> Enum.reduce(0, fn n, acc -> acc * 5 + n end)
+  end
+end
+
+Kino.Input.read(input)
+|> String.split("\n", trim: true)
+|> Enum.map(&String.to_charlist/1)
+|> Enum.map(&Bracket.feed/1)
+|> Enum.filter(&(!elem(&1, 1)))
+|> Enum.map(&elem(&1, 0))
+|> Enum.map(&Score.score/1)
+|> Enum.sort(:asc)
+|> then(fn l ->
+  Enum.at(l, div(length(l), 2))
+end)
 ```
