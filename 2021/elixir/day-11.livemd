@@ -1,0 +1,35 @@
+# Day 11: Dumbo Octopus
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Part 1
+
+```elixir
+defmodule M do
+  def parse(input) do
+    input
+    |> String.split("\n", trim: true)
+    |> Enum.map(fn row ->
+      for <<c <- row>>, do: String.to_integer(<<c>>)
+    end)
+  end
+
+  def step(octopus) do
+  end
+end
+
+Kino.Input.read(input)
+|> M.parse()
+```
