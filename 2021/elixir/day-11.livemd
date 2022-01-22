@@ -24,12 +24,85 @@ defmodule M do
     |> Enum.map(fn row ->
       for <<c <- row>>, do: String.to_integer(<<c>>)
     end)
+    |> matrix_to_map()
   end
 
-  def step(octopus) do
+  def matrix_to_map(matrix) do
+    for {row, y} <- Enum.with_index(matrix),
+        {value, x} <- Enum.with_index(row),
+        into: %{},
+        do: {{x, y}, value}
+  end
+
+  def map_to_matrix(map) do
+    {{cols, rows}, _} = Enum.max(map)
+
+    for y <- 0..rows do
+      for x <- 0..cols, do: map[{x, y}]
+    end
+  end
+
+  def print(map) do
+    IO.inspect(map_to_matrix(map))
+    map
+  end
+
+  def step(map, n) do
+    {flashes, _} =
+      Enum.map_reduce(1..n, map, fn _, map ->
+        step(map)
+        |> print()
+        |> then(fn map ->
+          {Enum.count(map, fn {_, v} -> v == 0 end), map}
+        end)
+      end)
+
+    Enum.sum(flashes)
+  end
+
+  def step(map) do
+    for {k, v} <- map, into: %{} do
+      {k, v + 1}
+    end
+    |> flash()
+  end
+
+  def flash(map) do
+    flash(map, MapSet.new())
+  end
+
+  def flash(map, flashed) do
+    flashing =
+      for {k, v} <- map, v > 9 do
+        k
+      end
+
+    {map, flashed} =
+      Enum.reduce(
+        flashing,
+        {map, flashed},
+        fn {x, y}, {map, flashed} -> {flash(map, x, y), MapSet.put(flashed, {x, y})} end
+      )
+
+    map
+    |> Enum.map(fn {k, v} -> {k, if(MapSet.member?(flashed, k), do: 0, else: v)} end)
+    |> Map.new()
+    |> then(fn map -> if length(flashing) > 0, do: flash(map, flashed), else: map end)
+  end
+
+  def flash(map, x, y) do
+    Map.merge(
+      map,
+      for {ox, oy} <- [{1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}, {0, 1}],
+          x + ox >= 0 and y + oy >= 0 and map[{x + ox, y + oy}] <= 9,
+          into: %{} do
+        {{x + ox, y + oy}, map[{x + ox, y + oy}] + 1}
+      end
+    )
   end
 end
 
 Kino.Input.read(input)
 |> M.parse()
+|> M.step(100)
 ```
