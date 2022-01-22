@@ -17,7 +17,7 @@ input = Kino.Input.textarea("Input")
 ## Part 1
 
 ```elixir
-defmodule M do
+defmodule M1 do
   def parse(input) do
     input
     |> String.split("\n", trim: true)
@@ -51,7 +51,6 @@ defmodule M do
     {flashes, _} =
       Enum.map_reduce(1..n, map, fn _, map ->
         step(map)
-        |> print()
         |> then(fn map ->
           {Enum.count(map, fn {_, v} -> v == 0 end), map}
         end)
@@ -65,6 +64,7 @@ defmodule M do
       {k, v + 1}
     end
     |> flash()
+    |> print()
   end
 
   def flash(map) do
@@ -103,6 +103,33 @@ defmodule M do
 end
 
 Kino.Input.read(input)
-|> M.parse()
-|> M.step(100)
+|> M1.parse()
+|> M1.step(100)
+```
+
+## Part 2
+
+```elixir
+defmodule M2 do
+  def step(map) do
+    step(map, 0)
+  end
+
+  def step(map, step) do
+    if synchronized?(map) do
+      step
+    else
+      step(M1.step(map), step + 1)
+    end
+  end
+
+  def synchronized?(map) do
+    [first | rest] = Map.values(map)
+    Enum.all?(rest, fn x -> x == first end)
+  end
+end
+
+Kino.Input.read(input)
+|> M1.parse()
+|> M2.step()
 ```
