@@ -63,3 +63,63 @@ Kino.Input.read(input)
 |> Enum.dedup()
 |> Enum.count(fn c -> c == :start end)
 ```
+
+## Part 2
+
+```elixir
+defmodule M do
+  def parse(input) do
+    for p <- String.split(input, "\n", trim: true) do
+      [a, b] = String.split(p, "-", trim: true)
+      {a, b} = {String.to_atom(a), String.to_atom(b)}
+      [{a, b}, {b, a}]
+    end
+    |> List.flatten()
+  end
+
+  def traveled?(path, cave) do
+    cond do
+      cave in [:start, :end] ->
+        Enum.member?(path, cave)
+
+      String.upcase(Atom.to_string(cave)) == Atom.to_string(cave) ->
+        false
+
+      true ->
+        Enum.frequencies(path)
+        |> Enum.any?(fn {k, v} ->
+          String.downcase(Atom.to_string(k)) == Atom.to_string(k) and
+            v >= 2 and
+            Enum.member?(path, cave)
+        end)
+    end
+  end
+
+  def travel(paths) do
+    travel(paths, :start, [])
+  end
+
+  def travel(paths, cave, path) do
+    path = path ++ [cave]
+    adjacent = Keyword.get_values(paths, cave)
+
+    if cave == :end do
+      # IO.inspect(path)
+      path
+    else
+      for c <- adjacent do
+        if !traveled?(path, c) do
+          travel(paths, c, path)
+        end
+      end
+    end
+  end
+end
+
+Kino.Input.read(input)
+|> M.parse()
+|> M.travel()
+|> List.flatten()
+|> Enum.dedup()
+|> Enum.count(fn c -> c == :start end)
+```
