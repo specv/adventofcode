@@ -17,5 +17,49 @@ input = Kino.Input.textarea("Input")
 ## Part 1
 
 ```elixir
+defmodule M do
+  def parse(input) do
+    for p <- String.split(input, "\n", trim: true) do
+      [a, b] = String.split(p, "-", trim: true)
+      {a, b} = {String.to_atom(a), String.to_atom(b)}
+      [{a, b}, {b, a}]
+    end
+    |> List.flatten()
+  end
 
+  def traveled?(path, cave) do
+    if String.downcase(Atom.to_string(cave)) == Atom.to_string(cave) do
+      Enum.member?(path, cave)
+    else
+      false
+    end
+  end
+
+  def travel(paths) do
+    travel(paths, :start, [])
+  end
+
+  def travel(paths, cave, path) do
+    path = path ++ [cave]
+    adjacent = Keyword.get_values(paths, cave)
+
+    if cave == :end do
+      IO.inspect(path)
+      path
+    else
+      for c <- adjacent do
+        if !traveled?(path, c) do
+          travel(paths, c, path)
+        end
+      end
+    end
+  end
+end
+
+Kino.Input.read(input)
+|> M.parse()
+|> M.travel()
+|> List.flatten()
+|> Enum.dedup()
+|> Enum.count(fn c -> c == :start end)
 ```
