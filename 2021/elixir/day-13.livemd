@@ -1,0 +1,114 @@
+# Day 13: Transparent Origami
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Part 1
+
+```elixir
+defmodule M do
+  def parse(input) do
+    [first, last] = String.split(input, "\n\n", trim: true)
+
+    dots =
+      String.split(first, "\n")
+      |> Enum.map(fn s ->
+        [left, right] = String.split(s, ",")
+        {String.to_integer(left), String.to_integer(right)}
+      end)
+
+    folds =
+      String.split(last, "\n")
+      |> Enum.map(fn s ->
+        [_, direction, line] = Regex.run(~r/fold along (x|y)=(\d+)/, s)
+        {direction, String.to_integer(line)}
+      end)
+
+    {dots, folds}
+  end
+
+  def print(dots) do
+    cols = dots |> Enum.map(&elem(&1, 0)) |> Enum.max()
+    rows = dots |> Enum.map(&elem(&1, 1)) |> Enum.max()
+
+    for row <- 0..rows do
+      for col <- 0..cols do
+        IO.write(
+          if Enum.member?(dots, {col, row}) do
+            "#"
+          else
+            "."
+          end
+        )
+      end
+
+      IO.write("\n")
+    end
+
+    IO.write("\n")
+    IO.write(String.duplicate("=", 80))
+    IO.write("\n")
+
+    dots
+  end
+
+  def trans(v, n) do
+    v - (v - n) * 2
+  end
+
+  def fold(dots, {direction, n}) do
+    fold(dots, direction, n)
+    |> Enum.uniq()
+
+    # |> print()
+  end
+
+  def fold(dots, folds) do
+    if length(folds) > 0 do
+      [fold | folds] = folds
+      dots = fold(dots, fold)
+      fold(dots, folds)
+    else
+      dots
+    end
+  end
+
+  def fold(dots, "x", n_col) do
+    Enum.map(dots, fn {x, y} ->
+      if x >= n_col do
+        {trans(x, n_col), y}
+      else
+        {x, y}
+      end
+    end)
+  end
+
+  def fold(dots, "y", n_row) do
+    Enum.map(dots, fn {x, y} ->
+      if y >= n_row do
+        {x, trans(y, n_row)}
+      else
+        {x, y}
+      end
+    end)
+  end
+end
+
+Kino.Input.read(input)
+|> M.parse()
+|> then(fn {dots, folds} ->
+  M.fold(dots, Enum.at(folds, 0))
+end)
+|> Enum.count()
+```
