@@ -48,7 +48,7 @@ defmodule M do
           if Enum.member?(dots, {col, row}) do
             "#"
           else
-            "."
+            " "
           end
         )
       end
@@ -111,4 +111,15 @@ Kino.Input.read(input)
   M.fold(dots, Enum.at(folds, 0))
 end)
 |> Enum.count()
+```
+
+## Part 2
+
+```elixir
+Kino.Input.read(input)
+|> M.parse()
+|> then(fn {dots, folds} ->
+  M.fold(dots, folds)
+end)
+|> M.print()
 ```
