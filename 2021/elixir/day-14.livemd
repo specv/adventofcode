@@ -1,0 +1,101 @@
+# Day 14: Extended Polymerization
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Parse
+
+```elixir
+defmodule Parser do
+  def parse(input) do
+    input
+    |> String.split("\n\n", trim: true)
+    |> then(fn [template, pairs] ->
+      pairs
+      |> String.split("\n")
+      |> Enum.map(fn pair ->
+        String.split(pair, " -> ")
+        |> List.to_tuple()
+      end)
+      |> Map.new()
+      |> then(fn pairs -> {template, pairs} end)
+    end)
+  end
+end
+```
+
+## Part 1
+
+```elixir
+defmodule Solution do
+  def step(template, _, 0) do
+    template
+  end
+
+  def step(template, pairs, steps) do
+    step(replace(template, pairs), pairs, steps - 1)
+  end
+
+  def replace(template, pairs) do
+    template
+    |> String.to_charlist()
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.map(&List.to_string/1)
+    |> Enum.map(fn pair ->
+      cond do
+        (char = Map.get(pairs, pair)) != nil ->
+          String.to_charlist(pair)
+          |> List.insert_at(1, char)
+          |> List.to_string()
+
+        true ->
+          pair
+      end
+    end)
+    |> then(fn chunks ->
+      for {chunk, index} <- Enum.with_index(chunks) do
+        case index do
+          0 -> chunk
+          _ -> String.slice(chunk, 1..-1)
+        end
+      end
+    end)
+    |> List.to_string()
+  end
+end
+
+Kino.Input.read(input)
+|> Parser.parse()
+|> then(fn {template, pairs} ->
+  Solution.step(template, pairs, 10)
+end)
+|> then(fn str ->
+  str
+  |> String.to_charlist()
+  |> Enum.frequencies()
+end)
+|> then(fn freq ->
+  max =
+    freq
+    |> Enum.max_by(fn {_, v} -> v end)
+    |> elem(1)
+
+  min =
+    freq
+    |> Enum.min_by(fn {_, v} -> v end)
+    |> elem(1)
+
+  max - min
+end)
+```
