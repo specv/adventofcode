@@ -99,3 +99,85 @@ end)
   max - min
 end)
 ```
+
+## Part 2
+
+```elixir
+defmodule Solution do
+  def step(template, pairs, steps) when is_bitstring(template) do
+    template
+    |> String.to_charlist()
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.map(fn pair -> {List.to_string(pair), 1} end)
+    |> Enum.group_by(fn {k, _v} -> k end)
+    |> Enum.map(fn {k, l} ->
+      {k, Enum.map(l, fn {_k, v} -> v end) |> Enum.sum()}
+    end)
+    |> Map.new()
+    |> step(pairs, steps)
+  end
+
+  def step(counter, _, 0) do
+    counter
+  end
+
+  def step(counter, pairs, steps) do
+    counter = update(counter, pairs)
+    step(counter, pairs, steps - 1)
+  end
+
+  def update(counter, pairs) do
+    update(counter, counter, pairs)
+  end
+
+  def update(_old_counter, new_counter, []) do
+    new_counter
+  end
+
+  def update(old_counter, new_counter, pairs) do
+    [pair | pairs] = pairs
+    {key = <<l, r>>, c} = pair
+
+    new_counter =
+      if (count = Map.get(old_counter, key, 0)) > 0 do
+        new_counter
+        |> inc(key, -count)
+        |> inc(List.to_string([l, c]), count)
+        |> inc(List.to_string([c, r]), count)
+      else
+        new_counter
+      end
+
+    update(old_counter, new_counter, pairs)
+  end
+
+  def inc(counter, key, times) do
+    Map.put(counter, key, Map.get(counter, key, 0) + times)
+  end
+end
+
+Kino.Input.read(input)
+|> Parser.parse()
+|> then(fn {template, pairs} ->
+  Solution.step(template, Map.to_list(pairs), 40)
+  |> Enum.group_by(fn {k, _} -> String.at(k, 0) end)
+  |> Enum.map(fn {k, list} ->
+    {
+      k,
+      list
+      |> Enum.map(fn {_, v} -> v end)
+      |> Enum.sum()
+    }
+  end)
+  |> Map.new()
+  |> then(fn freq ->
+    char = String.last(template)
+    Map.put(freq, char, Map.get(freq, char, 0) + 1)
+  end)
+end)
+|> then(fn freq ->
+  {_, max} = Enum.max_by(freq, fn {_, v} -> v end)
+  {_, min} = Enum.min_by(freq, fn {_, v} -> v end)
+  max - min
+end)
+```
