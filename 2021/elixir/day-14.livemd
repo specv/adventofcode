@@ -85,19 +85,8 @@ end)
   |> String.to_charlist()
   |> Enum.frequencies()
 end)
-|> then(fn freq ->
-  max =
-    freq
-    |> Enum.max_by(fn {_, v} -> v end)
-    |> elem(1)
-
-  min =
-    freq
-    |> Enum.min_by(fn {_, v} -> v end)
-    |> elem(1)
-
-  max - min
-end)
+|> Enum.min_max_by(&elem(&1, 1))
+|> then(fn {{_, min}, {_, max}} -> max - min end)
 ```
 
 ## Part 2
@@ -175,9 +164,6 @@ Kino.Input.read(input)
     Map.put(freq, char, Map.get(freq, char, 0) + 1)
   end)
 end)
-|> then(fn freq ->
-  {_, max} = Enum.max_by(freq, fn {_, v} -> v end)
-  {_, min} = Enum.min_by(freq, fn {_, v} -> v end)
-  max - min
-end)
+|> Enum.min_max_by(&elem(&1, 1))
+|> then(fn {{_, min}, {_, max}} -> max - min end)
 ```
