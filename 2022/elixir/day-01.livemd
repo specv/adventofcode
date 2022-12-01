@@ -25,3 +25,19 @@ Kino.Input.read(input)
 end)
 |> Enum.max()
 ```
+
+## Part 2
+
+```elixir
+Kino.Input.read(input)
+|> String.split("\n\n")
+|> Enum.map(fn group ->
+  group
+  |> String.split("\n")
+  |> Enum.map(&String.to_integer(&1))
+  |> Enum.sum()
+end)
+|> Enum.sort(:desc)
+|> Enum.take(3)
+|> Enum.sum()
+```
