@@ -30,3 +30,35 @@ input
 |> Enum.map(fn [x, y] -> score[{x, y}] end)
 |> Enum.sum()
 ```
+
+## Part 2
+
+```elixir
+score = %{
+  # C
+  {"A", "X"} => 0 + 3,
+  # A
+  {"A", "Y"} => 3 + 1,
+  # B
+  {"A", "Z"} => 6 + 2,
+  # A
+  {"B", "X"} => 0 + 1,
+  # B
+  {"B", "Y"} => 3 + 2,
+  # C
+  {"B", "Z"} => 6 + 3,
+  # B
+  {"C", "X"} => 0 + 2,
+  # C
+  {"C", "Y"} => 3 + 3,
+  # A
+  {"C", "Z"} => 6 + 1
+}
+
+input
+|> Kino.Input.read()
+|> String.split("\n")
+|> Enum.map(&String.split/1)
+|> Enum.map(fn [x, y] -> score[{x, y}] end)
+|> Enum.sum()
+```
