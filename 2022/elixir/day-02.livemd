@@ -1,0 +1,32 @@
+# Day 2: Rock Paper Scissors
+
+```elixir
+Mix.install([:kino])
+```
+
+## Part 1
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+```elixir
+score = %{
+  {"A", "X"} => 3 + 1,
+  {"A", "Y"} => 6 + 2,
+  {"A", "Z"} => 0 + 3,
+  {"B", "X"} => 0 + 1,
+  {"B", "Y"} => 3 + 2,
+  {"B", "Z"} => 6 + 3,
+  {"C", "X"} => 6 + 1,
+  {"C", "Y"} => 0 + 2,
+  {"C", "Z"} => 3 + 3
+}
+
+input
+|> Kino.Input.read()
+|> String.split("\n")
+|> Enum.map(&String.split/1)
+|> Enum.map(fn [x, y] -> score[{x, y}] end)
+|> Enum.sum()
+```
