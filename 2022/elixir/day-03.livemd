@@ -1,0 +1,41 @@
+# Day 3: Rucksack Reorganization
+
+```elixir
+Mix.install([:kino])
+```
+
+## Part 1
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+```elixir
+defmodule M do
+  def score(str) do
+    str
+    |> String.split_at(div(String.length(str), 2))
+    |> then(fn {l, r} ->
+      MapSet.intersection(to_set(l), to_set(r))
+    end)
+    |> MapSet.to_list()
+    |> hd()
+    |> then(fn
+      n when n >= ?a -> n - ?a + 1
+      n when n >= ?A -> n - ?A + 1 + 26
+    end)
+  end
+
+  defp to_set(str) do
+    str
+    |> String.to_charlist()
+    |> MapSet.new()
+  end
+end
+
+input
+|> Kino.Input.read()
+|> String.split()
+|> Enum.map(&M.score/1)
+|> Enum.sum()
+```
