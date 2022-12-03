@@ -39,3 +39,34 @@ input
 |> Enum.map(&M.score/1)
 |> Enum.sum()
 ```
+
+## Part 2
+
+```elixir
+defmodule M do
+  def score(group) do
+    group
+    |> Enum.map(&to_set/1)
+    |> Enum.reduce(&MapSet.intersection/2)
+    |> MapSet.to_list()
+    |> hd()
+    |> then(fn
+      n when n >= ?a -> n - ?a + 1
+      n when n >= ?A -> n - ?A + 1 + 26
+    end)
+  end
+
+  defp to_set(str) do
+    str
+    |> String.to_charlist()
+    |> MapSet.new()
+  end
+end
+
+input
+|> Kino.Input.read()
+|> String.split()
+|> Enum.chunk_every(3)
+|> Enum.map(&M.score/1)
+|> Enum.sum()
+```
