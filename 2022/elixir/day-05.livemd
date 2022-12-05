@@ -1,0 +1,42 @@
+# Day 5: Supply Stacks
+
+```elixir
+Mix.install([:kino])
+```
+
+## Part 1
+
+```elixir
+input = Kino.Input.textarea("Input", monospace: true)
+```
+
+```elixir
+defmodule Parser do
+  def parse(input) do
+    [stacks, procedure] = String.split(input, "\n\n")
+    {parse_stacks(stacks), parse_procedure(procedure)}
+  end
+
+  defp parse_stacks(str) do
+    str
+    |> String.split("\n")
+    |> List.last()
+    |> then(fn s -> Regex.scan(~r/\d/, s, return: :index) end)
+    |> Enum.map(fn [{index, _}] -> index end)
+  end
+
+  defp parse_procedure(str) do
+    str
+    |> String.split("\n")
+    |> Enum.drop(-1)
+    |> Enum.map(fn s ->
+      Regex.scan(~r/\d/, s)
+      |> Enum.map(fn [n] -> String.to_integer(n) end)
+    end)
+  end
+end
+
+input
+|> Kino.Input.read()
+|> Parser.parse()
+```
