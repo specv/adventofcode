@@ -18,21 +18,55 @@ defmodule Parser do
   end
 
   defp parse_stacks(str) do
-    str
-    |> String.split("\n")
-    |> List.last()
-    |> then(fn s -> Regex.scan(~r/\d/, s, return: :index) end)
-    |> Enum.map(fn [{index, _}] -> index end)
+    indices =
+      str
+      |> String.split("\n")
+      |> List.last()
+      |> then(fn s -> Regex.scan(~r/\d/, s, return: :index) end)
+      |> Enum.map(fn [{index, _}] -> index end)
+
+    stacks =
+      str
+      |> String.split("\n")
+      |> Enum.drop(-1)
+      |> Enum.reverse()
+
+    for i <- indices, s <- stacks, reduce: %{} do
+      acc ->
+        char = if String.at(s, i) == " ", do: nil, else: String.at(s, i)
+        stack = Stack.new() |> Stack.push(char)
+        Map.update(acc, i, stack, fn stack -> Stack.push(stack, char) end)
+    end
   end
 
   defp parse_procedure(str) do
     str
     |> String.split("\n")
-    |> Enum.drop(-1)
     |> Enum.map(fn s ->
       Regex.scan(~r/\d/, s)
       |> Enum.map(fn [n] -> String.to_integer(n) end)
     end)
+  end
+end
+
+defmodule Stack do
+  defstruct l: []
+
+  def new() do
+    %__MODULE__{}
+  end
+
+  def push(stack, nil) do
+    stack
+  end
+
+  def push(stack, value) do
+    %__MODULE__{l: [value | stack.l]}
+  end
+
+  def pop(stack) do
+    {v, l} = List.pop_at(stack.l, 0)
+    {v, %__MODULE__{l: l}}
   end
 end
 
