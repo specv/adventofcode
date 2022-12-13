@@ -11,44 +11,6 @@ input = Kino.Input.textarea("Input", monospace: true)
 ```
 
 ```elixir
-defmodule Parser do
-  def parse(input) do
-    [stacks, procedure] = String.split(input, "\n\n")
-    {parse_stacks(stacks), parse_procedure(procedure)}
-  end
-
-  defp parse_stacks(str) do
-    indices =
-      str
-      |> String.split("\n")
-      |> List.last()
-      |> then(fn s -> Regex.scan(~r/\d/, s, return: :index) end)
-      |> Enum.map(fn [{index, _}] -> index end)
-
-    stacks =
-      str
-      |> String.split("\n")
-      |> Enum.drop(-1)
-      |> Enum.reverse()
-
-    for i <- indices, s <- stacks, reduce: %{} do
-      acc ->
-        char = if String.at(s, i) == " ", do: nil, else: String.at(s, i)
-        stack = Stack.new() |> Stack.push(char)
-        Map.update(acc, i, stack, fn stack -> Stack.push(stack, char) end)
-    end
-  end
-
-  defp parse_procedure(str) do
-    str
-    |> String.split("\n")
-    |> Enum.map(fn s ->
-      Regex.scan(~r/\d/, s)
-      |> Enum.map(fn [n] -> String.to_integer(n) end)
-    end)
-  end
-end
-
 defmodule Stack do
   defstruct l: []
 
@@ -68,9 +30,84 @@ defmodule Stack do
     {v, l} = List.pop_at(stack.l, 0)
     {v, %__MODULE__{l: l}}
   end
-end
 
+  def top(stack) do
+    List.first(stack.l)
+  end
+end
+```
+
+```elixir
+defmodule Parser do
+  def parse(input) do
+    [stacks, procedure] = String.split(input, "\n\n")
+    {parse_stacks(stacks), parse_procedure(procedure)}
+  end
+
+  defp parse_stacks(str) do
+    indices =
+      str
+      |> String.split("\n")
+      |> List.last()
+      |> then(fn s -> Regex.scan(~r/\d+/, s, return: :index) end)
+      |> Enum.map(fn [{index, _}] -> index end)
+
+    stacks =
+      str
+      |> String.split("\n")
+      |> Enum.drop(-1)
+      |> Enum.reverse()
+
+    for {i, n} <- Enum.with_index(indices, 1), s <- stacks, reduce: %{} do
+      acc ->
+        char = if String.at(s, i) == " ", do: nil, else: String.at(s, i)
+        stack = Stack.new() |> Stack.push(char)
+        Map.update(acc, n, stack, fn stack -> Stack.push(stack, char) end)
+    end
+  end
+
+  defp parse_procedure(str) do
+    str
+    |> String.split("\n")
+    |> Enum.map(fn s ->
+      Regex.scan(~r/\d+/, s)
+      |> Enum.map(fn [n] -> String.to_integer(n) end)
+    end)
+    |> Enum.map(fn [amount, from, to] -> %{amount: amount, from: from, to: to} end)
+  end
+end
+```
+
+```elixir
+defmodule Crane do
+  def run(stacks, procedures) when is_list(procedures) do
+    for p <- procedures, reduce: stacks do
+      stacks -> run(stacks, p)
+    end
+  end
+
+  def run(stacks, procedure) when is_map(procedure) do
+    for _ <- 1..procedure.amount, reduce: stacks do
+      stacks -> execute(stacks, procedure.from, procedure.to)
+    end
+  end
+
+  defp execute(stacks, from, to) do
+    {stack_from, stack_to} = {stacks[from], stacks[to]}
+    {val, stack_from} = Stack.pop(stack_from)
+    stack_to = Stack.push(stack_to, val)
+    %{stacks | from => stack_from, to => stack_to}
+  end
+end
+```
+
+```elixir
 input
 |> Kino.Input.read()
 |> Parser.parse()
+|> then(fn {stacks, procudures} -> Crane.run(stacks, procudures) end)
+|> Map.to_list()
+|> Enum.sort_by(fn {n, _} -> n end)
+|> Enum.map(fn {_, stack} -> Stack.top(stack) end)
+|> Enum.join("")
 ```
