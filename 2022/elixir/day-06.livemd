@@ -18,3 +18,14 @@ input
 |> Enum.find_index(fn chars -> chars |> Enum.uniq() |> length() == 4 end)
 |> Kernel.+(4)
 ```
+
+## Part 2
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.to_charlist()
+|> Stream.chunk_every(14, 1)
+|> Enum.find_index(fn chars -> chars |> Enum.uniq() |> length() == 14 end)
+|> Kernel.+(14)
+```
