@@ -22,6 +22,10 @@ defmodule Stack do
     stack
   end
 
+  def push(stack, list) when is_list(list) do
+    %__MODULE__{l: Enum.concat(list, stack.l)}
+  end
+
   def push(stack, value) do
     %__MODULE__{l: [value | stack.l]}
   end
@@ -29,6 +33,11 @@ defmodule Stack do
   def pop(stack) do
     {v, l} = List.pop_at(stack.l, 0)
     {v, %__MODULE__{l: l}}
+  end
+
+  def pop(stack, n) do
+    {left, right} = Enum.split(stack.l, n)
+    {left, %__MODULE__{l: right}}
   end
 
   def top(stack) do
@@ -79,7 +88,7 @@ end
 ```
 
 ```elixir
-defmodule Crane do
+defmodule Crane9000 do
   def run(stacks, procedures) when is_list(procedures) do
     for p <- procedures, reduce: stacks do
       stacks -> run(stacks, p)
@@ -102,12 +111,45 @@ end
 ```
 
 ```elixir
-input
-|> Kino.Input.read()
-|> Parser.parse()
-|> then(fn {stacks, procudures} -> Crane.run(stacks, procudures) end)
-|> Map.to_list()
-|> Enum.sort_by(fn {n, _} -> n end)
-|> Enum.map(fn {_, stack} -> Stack.top(stack) end)
-|> Enum.join("")
+defmodule M do
+  def run(input, crane) do
+    input
+    |> Kino.Input.read()
+    |> Parser.parse()
+    |> then(fn {stacks, procudures} -> crane.run(stacks, procudures) end)
+    |> Map.to_list()
+    |> Enum.sort_by(fn {n, _} -> n end)
+    |> Enum.map(fn {_, stack} -> Stack.top(stack) end)
+    |> Enum.join("")
+  end
+end
+
+M.run(input, Crane9000)
+```
+
+## Part 2
+
+```elixir
+defmodule Crane9001 do
+  def run(stacks, procedures) when is_list(procedures) do
+    for p <- procedures, reduce: stacks do
+      stacks -> run(stacks, p)
+    end
+  end
+
+  def run(stacks, procedure) when is_map(procedure) do
+    execute(stacks, procedure.from, procedure.to, procedure.amount)
+  end
+
+  defp execute(stacks, from, to, n) do
+    {stack_from, stack_to} = {stacks[from], stacks[to]}
+    {val, stack_from} = Stack.pop(stack_from, n)
+    stack_to = Stack.push(stack_to, val)
+    %{stacks | from => stack_from, to => stack_to}
+  end
+end
+```
+
+```elixir
+M.run(input, Crane9001)
 ```
