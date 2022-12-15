@@ -1,0 +1,131 @@
+# Day 7: No Space Left On Device
+
+```elixir
+Mix.install([:kino])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Part 1
+
+```elixir
+defmodule FileNode do
+  defstruct [:name, :type, :path, :parent, size: 0]
+
+  @type type :: :file | :dir
+end
+
+defmodule FileSystem do
+  defstruct nodes: %{}, cwd: "/"
+
+  def new() do
+    root_node = %FileNode{name: "/", path: "/", type: :dir}
+    %__MODULE__{nodes: %{"/" => root_node}}
+  end
+
+  def cd(self, path = "/") do
+    %__MODULE__{self | cwd: path}
+  end
+
+  def cd(self, "..") do
+    %__MODULE__{self | cwd: Path.dirname(self.cwd)}
+  end
+
+  def cd(self, path) do
+    %__MODULE__{self | cwd: Path.join(self.cwd, path)}
+  end
+
+  def add(self, node = %FileNode{}) do
+    path = Path.join(self.cwd, node.name)
+    nodes = Map.put(self.nodes, path, %FileNode{node | path: path, parent: self.cwd})
+    %__MODULE__{self | nodes: nodes}
+  end
+
+  def size(self, path) when is_bitstring(path) do
+    size(self, self.nodes[path])
+  end
+
+  def size(_, node = %FileNode{type: :file}) do
+    node.size
+  end
+
+  def size(self, node = %FileNode{type: :dir}) do
+    sub_nodes(self, node.path)
+    |> Enum.map(&size(self, &1))
+    |> Enum.sum()
+  end
+
+  def nodes(self) do
+    Map.values(self.nodes)
+  end
+
+  def sub_nodes(self, path) do
+    Enum.filter(
+      nodes(self),
+      fn node -> node.path != path && Path.dirname(node.path) == path end
+    )
+  end
+end
+```
+
+```elixir
+defmodule Parser do
+  def parse("$ cd " <> path) do
+    {:cd, path: path}
+  end
+
+  def parse("$ ls") do
+    {:ls, []}
+  end
+
+  def parse("dir " <> name) do
+    {:file, %FileNode{name: name, type: :dir}}
+  end
+
+  def parse(s) do
+    [size, name] = String.split(s, " ")
+    {:file, %FileNode{name: name, type: :file, size: String.to_integer(size)}}
+  end
+end
+```
+
+```elixir
+defmodule Executer do
+  def commands(input) do
+    input
+    |> Kino.Input.read()
+    |> String.split("\n")
+    |> Enum.map(fn s -> Parser.parse(s) end)
+  end
+
+  def execute(commands) when is_list(commands) do
+    Enum.reduce(commands, FileSystem.new(), fn cmd, fs -> Map.merge(fs, execute(fs, cmd)) end)
+  end
+
+  def execute(fs, command) do
+    case command do
+      {:cd, path: path} -> FileSystem.cd(fs, path)
+      {:file, file_node} -> FileSystem.add(fs, file_node)
+      {:ls, []} -> fs
+    end
+  end
+end
+```
+
+```elixir
+input
+|> Executer.commands()
+|> Executer.execute()
+|> then(fn fs ->
+  fs
+  |> FileSystem.nodes()
+  |> Enum.filter(fn node -> node.type == :dir end)
+  |> Enum.map(&FileSystem.size(fs, &1))
+  |> Enum.filter(&(&1 <= 100_000))
+  |> Enum.sum()
+end)
+```
