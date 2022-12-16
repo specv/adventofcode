@@ -45,6 +45,8 @@ defmodule FileSystem do
     %__MODULE__{self | nodes: nodes}
   end
 
+  def size(self, path \\ "/")
+
   def size(self, path) when is_bitstring(path) do
     size(self, self.nodes[path])
   end
@@ -128,4 +130,27 @@ input
   |> Enum.filter(&(&1 <= 100_000))
   |> Enum.sum()
 end)
+```
+
+## Part 2
+
+```elixir
+fs =
+  input
+  |> Executer.commands()
+  |> Executer.execute()
+
+max_size = 70_000_000
+require_size = 30_000_000
+total_size = FileSystem.size(fs)
+free_size = max_size - total_size
+delete_size = require_size - free_size
+
+fs
+|> FileSystem.nodes()
+|> Enum.filter(fn node -> node.type == :dir end)
+|> Enum.map(&FileSystem.size(fs, &1))
+|> Enum.filter(&(&1 >= delete_size))
+|> Enum.sort()
+|> Enum.at(0)
 ```
