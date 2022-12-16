@@ -1,0 +1,83 @@
+# Day 8: Treetop Tree House
+
+```elixir
+Mix.install([:kino])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Part 1
+
+```elixir
+defmodule Parser do
+  def parse(str) do
+    str
+    |> String.split("\n")
+    |> Enum.map(fn s ->
+      s
+      |> String.graphemes()
+      |> Enum.map(fn c -> String.to_integer(c) end)
+    end)
+    |> then(fn rows ->
+      for {row, r} <- Enum.with_index(rows), {val, c} <- Enum.with_index(row), into: %{} do
+        {{r, c}, val}
+      end
+    end)
+  end
+end
+```
+
+```elixir
+defmodule Trees do
+  def visible?(map, row, col) do
+    Enum.map(
+      [
+        grids(map, row, col, 0, 1),
+        grids(map, row, col, 1, 0),
+        grids(map, row, col, 0, -1),
+        grids(map, row, col, -1, 0)
+      ],
+      fn grids -> max?(map, grids, map[{row, col}]) end
+    )
+    |> Enum.any?()
+  end
+
+  defp max?(_, [], _) do
+    true
+  end
+
+  defp max?(map, grids, val) do
+    Enum.all?(grids, fn {row, col} -> map[{row, col}] < val end)
+  end
+
+  defp grids(_, _, _, 0, 0) do
+    []
+  end
+
+  defp grids(map, row, col, offset_row, offset_col) do
+    {r, c} = {row + offset_row, col + offset_col}
+
+    if map[{r, c}] do
+      [{r, c} | grids(map, r, c, offset_row, offset_col)]
+    else
+      []
+    end
+  end
+end
+```
+
+```elixir
+map =
+  input
+  |> Kino.Input.read()
+  |> Parser.parse()
+
+map
+|> Map.keys()
+|> Enum.map(fn {row, col} -> Trees.visible?(map, row, col) end)
+|> Enum.count(& &1)
+```
