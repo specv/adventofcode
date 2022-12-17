@@ -81,3 +81,60 @@ map
 |> Enum.map(fn {row, col} -> Trees.visible?(map, row, col) end)
 |> Enum.count(& &1)
 ```
+
+## Part 2
+
+```elixir
+defmodule Trees.Part2 do
+  def score(map, row, col) do
+    Enum.map(
+      [
+        grids(map, row, col, 0, 1),
+        grids(map, row, col, 1, 0),
+        grids(map, row, col, 0, -1),
+        grids(map, row, col, -1, 0)
+      ],
+      fn grids -> viewing_trees(map, grids, map[{row, col}]) end
+    )
+    |> Enum.reduce(fn x, acc -> x * acc end)
+  end
+
+  defp viewing_trees(_, [], _) do
+    0
+  end
+
+  defp viewing_trees(map, grids, val) do
+    grids
+    |> Enum.take_while(fn {row, col} -> map[{row, col}] < val end)
+    |> then(fn shorter_grids ->
+      Enum.min([length(shorter_grids) + 1, length(grids)])
+    end)
+  end
+
+  defp grids(_, _, _, 0, 0) do
+    []
+  end
+
+  defp grids(map, row, col, offset_row, offset_col) do
+    {r, c} = {row + offset_row, col + offset_col}
+
+    if map[{r, c}] do
+      [{r, c} | grids(map, r, c, offset_row, offset_col)]
+    else
+      []
+    end
+  end
+end
+```
+
+```elixir
+map =
+  input
+  |> Kino.Input.read()
+  |> Parser.parse()
+
+map
+|> Map.keys()
+|> Enum.map(fn {row, col} -> Trees.Part2.score(map, row, col) end)
+|> Enum.max()
+```
