@@ -1,0 +1,90 @@
+# Day 9: Rope Bridge
+
+```elixir
+Mix.install([:kino])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Part 1
+
+```elixir
+defmodule Parser do
+  def parse(text) do
+    text
+    |> String.split("\n")
+    |> Enum.map(fn s -> String.split(s, " ") end)
+    |> Enum.map(fn [direction, distance] ->
+      List.duplicate(trans_direction(direction), String.to_integer(distance))
+    end)
+    |> Enum.concat()
+  end
+
+  defp trans_direction(direction) do
+    case direction do
+      "R" -> :right
+      "D" -> :down
+      "L" -> :left
+      "U" -> :up
+    end
+  end
+end
+```
+
+```elixir
+defmodule Simulator do
+  @direction %{left: {0, -1}, right: {0, 1}, up: {1, 0}, down: {-1, 0}}
+  @neighbours [{0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1, -1}, {-1, 1}, {1, 1}, {-1, -1}]
+
+  defstruct head: {0, 0}, tail: {0, 0}
+
+  def new() do
+    %__MODULE__{}
+  end
+
+  def adjacent?(self) do
+    if self.head == self.tail do
+      true
+    else
+      Enum.any?(@neighbours, fn {offset_row, offset_col} ->
+        {row, col} = self.head
+        {row + offset_row, col + offset_col} == self.tail
+      end)
+    end
+  end
+
+  def move(self, direction) do
+    new_self = move_head(self, direction)
+
+    if adjacent?(new_self) do
+      new_self
+    else
+      move_tail(new_self, self.head)
+    end
+  end
+
+  defp move_head(self, direction) do
+    {offset_row, offset_col} = @direction[direction]
+    {row, col} = self.head
+    %__MODULE__{self | head: {row + offset_row, col + offset_col}}
+  end
+
+  defp move_tail(self, position) do
+    %{self | tail: position}
+  end
+end
+```
+
+```elixir
+input
+|> Kino.Input.read()
+|> Parser.parse()
+|> Enum.scan(Simulator.new(), fn direction, position -> Simulator.move(position, direction) end)
+|> Enum.map(fn position -> position.tail end)
+|> Enum.uniq()
+|> Enum.count()
+```
