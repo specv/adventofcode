@@ -1,7 +1,10 @@
 # Day 9: Rope Bridge
 
 ```elixir
-Mix.install([:kino])
+Mix.install([
+  :kino,
+  :kino_vega_lite
+])
 ```
 
 ## Input
@@ -80,11 +83,38 @@ end
 ```
 
 ```elixir
-input
-|> Kino.Input.read()
-|> Parser.parse()
-|> Enum.scan(Simulator.new(), fn direction, position -> Simulator.move(position, direction) end)
-|> Enum.map(fn position -> position.tail end)
+positions =
+  input
+  |> Kino.Input.read()
+  |> Parser.parse()
+  |> Enum.scan(Simulator.new(), fn direction, position -> Simulator.move(position, direction) end)
+  |> Enum.map(fn position -> position.tail end)
+
+positions
+|> Enum.uniq()
+|> Enum.count()
+```
+
+```elixir
+defmodule Display do
+  alias VegaLite, as: Vl
+
+  def display(positions) do
+    {y, x} = Enum.unzip(positions)
+
+    Vl.new(width: 500, height: 500)
+    |> Vl.data_from_values(x: x, y: y)
+    |> Vl.mark(:circle)
+    |> Vl.encode_field(:x, "x")
+    |> Vl.encode_field(:y, "y", sort: "-y")
+    |> Vl.encode_field(:size, "", value: 50)
+  end
+end
+```
+
+```elixir
+Display.display(positions)
+```
 |> Enum.uniq()
 |> Enum.count()
 ```
