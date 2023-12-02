@@ -101,3 +101,57 @@ Kino.Input.read(input)
 |> String.split("\n")
 |> Part2.calibration_value()
 ```
+
+## Part 2 - Solution 2
+
+```elixir
+defmodule Part2Solution2 do
+  @digits %{
+    "one" => 1,
+    "two" => 2,
+    "three" => 3,
+    "four" => 4,
+    "five" => 5,
+    "six" => 6,
+    "seven" => 7,
+    "eight" => 8,
+    "nine" => 9,
+    "1" => 1,
+    "2" => 2,
+    "3" => 3,
+    "4" => 4,
+    "5" => 5,
+    "6" => 6,
+    "7" => 7,
+    "8" => 8,
+    "9" => 9
+  }
+
+  def calibration_value(line) when is_bitstring(line) do
+    digits =
+      @digits
+      |> Map.keys()
+      |> Enum.join("|")
+      # lookahead assertion
+      |> then(fn s -> "(?=(#{s}))" end)
+      |> Regex.compile!()
+      |> Regex.scan(line)
+
+    [_, left] = List.first(digits)
+    [_, right] = List.last(digits)
+    @digits[left] * 10 + @digits[right]
+  end
+
+  def calibration_value(document) when is_list(document) do
+    document
+    |> Enum.map(fn line -> calibration_value(line) end)
+    |> Enum.sum()
+  end
+end
+```
+
+```elixir
+Kino.Input.read(input)
+|> String.split("\n")
+|> Part2Solution2.calibration_value()
+```
