@@ -43,3 +43,61 @@ Kino.Input.read(input)
 |> String.split("\n")
 |> Part1.calibration_value()
 ```
+
+## Part 2
+
+```elixir
+defmodule Part2 do
+  @digits %{
+    "one" => 1,
+    "two" => 2,
+    "three" => 3,
+    "four" => 4,
+    "five" => 5,
+    "six" => 6,
+    "seven" => 7,
+    "eight" => 8,
+    "nine" => 9,
+    "1" => 1,
+    "2" => 2,
+    "3" => 3,
+    "4" => 4,
+    "5" => 5,
+    "6" => 6,
+    "7" => 7,
+    "8" => 8,
+    "9" => 9
+  }
+
+  @digits_reverse for {key, value} <- @digits, into: %{}, do: {String.reverse(key), value}
+
+  def calibration_value(line) when is_bitstring(line) do
+    left = find_digit(line, @digits)
+    right = find_digit(String.reverse(line), @digits_reverse)
+    left * 10 + right
+  end
+
+  def calibration_value(document) when is_list(document) do
+    document
+    |> Enum.map(fn line -> calibration_value(line) end)
+    |> Enum.sum()
+  end
+
+  defp find_digit(line, digits) do
+    digits
+    |> Map.keys()
+    |> Enum.join("|")
+    |> Regex.compile!()
+    |> Regex.scan(line)
+    |> List.first()
+    |> List.first()
+    |> then(fn k -> digits[k] end)
+  end
+end
+```
+
+```elixir
+Kino.Input.read(input)
+|> String.split("\n")
+|> Part2.calibration_value()
+```
