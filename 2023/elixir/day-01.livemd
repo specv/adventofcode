@@ -1,0 +1,45 @@
+# Day 1: Trebuchet?!
+
+```elixir
+Mix.install([
+  :kino
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+## Part 1
+
+```elixir
+defmodule Part1 do
+  def calibration_value(line) when is_bitstring(line) do
+    line = String.graphemes(line)
+    find_integer(line) * 10 + find_integer(Enum.reverse(line))
+  end
+
+  def calibration_value(document) when is_list(document) do
+    document
+    |> Enum.map(fn line -> calibration_value(line) end)
+    |> Enum.sum()
+  end
+
+  defp find_integer(list) do
+    Enum.find_value(list, fn char ->
+      case Integer.parse(char) do
+        {v, _} -> v
+        :error -> false
+      end
+    end)
+  end
+end
+```
+
+```elixir
+Kino.Input.read(input)
+|> String.split("\n")
+|> Part1.calibration_value()
+```
