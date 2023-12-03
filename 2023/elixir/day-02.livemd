@@ -72,3 +72,34 @@ input
 |> Part1.possible_ids()
 |> Enum.sum()
 ```
+
+## Part 2
+
+```elixir
+defmodule Part2 do
+  def power_of_games(games) do
+    games
+    |> Enum.map(fn {_, game} -> power_of_game(game) end)
+    |> Enum.sum()
+  end
+
+  def power_of_game(game) do
+    game
+    |> Enum.concat()
+    |> Enum.group_by(fn {_num, color} -> color end)
+    |> Enum.map(fn {_color, cubes} ->
+      cubes
+      |> Enum.map(fn {num, _} -> num end)
+      |> Enum.max()
+    end)
+    |> Enum.reduce(&*/2)
+  end
+end
+```
+
+```elixir
+input
+|> Kino.Input.read()
+|> Parser.parse_games()
+|> Part2.power_of_games()
+```
