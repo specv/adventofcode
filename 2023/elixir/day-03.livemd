@@ -1,0 +1,105 @@
+# Day 3: Gear Ratios
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.11.3"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("input")
+```
+
+## Parser
+
+```elixir
+defmodule Parser do
+  def parse(input) do
+    input
+    |> String.split("\n")
+    |> Enum.with_index()
+    |> Enum.map(fn {row, y} ->
+      row
+      |> String.graphemes()
+      |> Enum.with_index()
+      |> Enum.map(fn {char, x} ->
+        {{x, y}, %{char: char, type: type(char)}}
+      end)
+    end)
+    |> Enum.concat()
+    |> Map.new()
+  end
+
+  def type(char) do
+    cond do
+      char == "." -> nil
+      "0" <= char and char <= "9" -> :number
+      true -> :symbol
+    end
+  end
+end
+```
+
+## Part 1
+
+```elixir
+defmodule Part1 do
+  @adjacents [{-1, -1}, {0, -1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}]
+
+  def number_coords(schematic) do
+    schematic
+    |> symbols()
+    |> Enum.map(fn {{x, y}, _} -> adjacent_number(schematic, x, y) end)
+    |> Enum.concat()
+    |> Enum.dedup()
+  end
+
+  def numbers(schematic) do
+    schematic
+    |> number_coords()
+    |> Enum.map(fn {x, y} ->
+      coord_number(schematic, x, y)
+      |> String.to_integer()
+    end)
+  end
+
+  defp coord_number(schematic, x, y) do
+    case schematic[{x + 1, y}] do
+      %{type: :number} -> schematic[{x, y}].char <> coord_number(schematic, x + 1, y)
+      _ -> schematic[{x, y}].char
+    end
+  end
+
+  defp number_coord(schematic, x, y) do
+    case schematic[{x - 1, y}] do
+      %{type: :number} -> number_coord(schematic, x - 1, y)
+      _ -> {x, y}
+    end
+  end
+
+  defp symbols(schematic) do
+    Enum.filter(schematic, fn {_, char} -> char.type == :symbol end)
+  end
+
+  defp adjacent_number(schematic, x, y) do
+    @adjacents
+    |> Enum.map(fn {off_x, off_y} ->
+      case schematic[{nx = x + off_x, ny = y + off_y}] do
+        %{type: :number} -> number_coord(schematic, nx, ny)
+        _ -> nil
+      end
+    end)
+    |> Enum.filter(fn x -> x end)
+  end
+end
+```
+
+```elixir
+input
+|> Kino.Input.read()
+|> Parser.parse()
+|> Part1.numbers()
+|> Enum.sum()
+```
