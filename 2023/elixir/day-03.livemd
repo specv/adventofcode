@@ -80,7 +80,7 @@ defmodule Part1 do
   end
 
   defp symbols(schematic) do
-    Enum.filter(schematic, fn {_, char} -> char.type == :symbol end)
+    Enum.filter(schematic, fn {_, %{type: type}} -> type == :symbol end)
   end
 
   defp adjacent_number(schematic, x, y) do
@@ -101,5 +101,72 @@ input
 |> Kino.Input.read()
 |> Parser.parse()
 |> Part1.numbers()
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+defmodule Part2 do
+  @adjacents [{-1, -1}, {0, -1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}]
+
+  def number_coords(schematic) do
+    schematic
+    |> gear_symbols()
+    |> Enum.map(fn {{x, y}, _} ->
+      adjacent_number(schematic, x, y) |> Enum.dedup()
+    end)
+    |> Enum.filter(fn coords -> length(coords) == 2 end)
+  end
+
+  def numbers(schematic) do
+    schematic
+    |> number_coords()
+    |> Enum.map(fn coords ->
+      Enum.map(coords, fn {x, y} ->
+        coord_number(schematic, x, y) |> String.to_integer()
+      end)
+    end)
+  end
+
+  defp coord_number(schematic, x, y) do
+    case schematic[{x + 1, y}] do
+      %{type: :number} -> schematic[{x, y}].char <> coord_number(schematic, x + 1, y)
+      _ -> schematic[{x, y}].char
+    end
+  end
+
+  defp number_coord(schematic, x, y) do
+    case schematic[{x - 1, y}] do
+      %{type: :number} -> number_coord(schematic, x - 1, y)
+      _ -> {x, y}
+    end
+  end
+
+  defp gear_symbols(schematic) do
+    Enum.filter(schematic, fn {_, %{char: char, type: type}} ->
+      type == :symbol and char == "*"
+    end)
+  end
+
+  defp adjacent_number(schematic, x, y) do
+    @adjacents
+    |> Enum.map(fn {off_x, off_y} ->
+      case schematic[{nx = x + off_x, ny = y + off_y}] do
+        %{type: :number} -> number_coord(schematic, nx, ny)
+        _ -> nil
+      end
+    end)
+    |> Enum.filter(fn x -> x end)
+  end
+end
+```
+
+```elixir
+input
+|> Kino.Input.read()
+|> Parser.parse()
+|> Part2.numbers()
+|> Enum.map(fn nums -> Enum.reduce(nums, &*/2) end)
 |> Enum.sum()
 ```
