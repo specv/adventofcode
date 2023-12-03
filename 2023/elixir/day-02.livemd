@@ -1,0 +1,74 @@
+# Day 2: Cube Conundrum
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.11.3"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("input")
+```
+
+## Part 1
+
+```elixir
+defmodule Parser do
+  def parse_games(games) do
+    games
+    |> String.split("\n")
+    |> Enum.map(&parse_game/1)
+  end
+
+  def parse_game(game) do
+    ["Game " <> game_id, sets] = String.split(game, ": ")
+
+    parsed =
+      sets
+      |> String.split("; ")
+      |> Enum.map(fn set ->
+        set
+        |> String.split(", ")
+        |> Enum.map(fn s ->
+          [num, color] = String.split(s, " ")
+          {String.to_integer(num), color}
+        end)
+      end)
+
+    {String.to_integer(game_id), parsed}
+  end
+end
+```
+
+```elixir
+defmodule Part1 do
+  @color_cubes %{
+    "red" => 12,
+    "green" => 13,
+    "blue" => 14
+  }
+
+  def possible_ids(games) do
+    games
+    |> Enum.filter(fn {_game_id, game} -> possible?(game) end)
+    |> Enum.map(fn {game_id, _game} -> game_id end)
+  end
+
+  def possible?(game) do
+    game
+    |> Enum.concat()
+    |> Enum.map(fn {num, color} -> num <= @color_cubes[color] end)
+    |> Enum.all?()
+  end
+end
+```
+
+```elixir
+input
+|> Kino.Input.read()
+|> Parser.parse_games()
+|> Part1.possible_ids()
+|> Enum.sum()
+```
